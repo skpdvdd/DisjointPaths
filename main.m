@@ -33,7 +33,8 @@ G = [1 2 0.001
 G = sparse(G(:,1), G(:,2), G(:,3), 11, 11);
 
 % kp = k_shortest_arc_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths);
-kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths);
+
+kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths, @dag_shortest_paths);
  
 % -------------------------------
 
@@ -47,7 +48,7 @@ kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths);
 %  
 % G = sparse(G(:,1), G(:,2), G(:,3), 6, 6);
 % 
-% % kp = k_shortest_arc_disjoint_paths(G, 1, 6, @bellman_ford_shortest_paths);
+% kp = k_shortest_arc_disjoint_paths(G, 1, 6, @bellman_ford_shortest_paths);
 % kp = k_shortest_vertex_disjoint_paths(G, 1, 6, @bellman_ford_shortest_paths);
 
 % --------------------------------

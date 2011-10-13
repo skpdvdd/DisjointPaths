@@ -1,5 +1,5 @@
-classdef vertex_disjoint_visitor < handle
-    %VERTEX_DISJOINT_VISITOR Visitor class for use with k_shortest_vertex_disjoint_paths.
+classdef k_shortest_paths_visitor < handle
+    %K_SHORTEST_PATHS_VISITOR Visitor class for use with k_shortest_vertex_*_paths.
     
     methods
         R = graph_reversed(obj, subject, R);
@@ -9,6 +9,12 @@ classdef vertex_disjoint_visitor < handle
         graph = combined_graph_generated(obj, subject, graph);
         %COMBINED_GRAPH_GENERATED Called after the combined graph was generated.
         %   graph is the combined graph, a n*3 matrix [from to weight ; ...].
+        
+        [ paths, costs ] = shortest_paths_computed(obj, subject, paths, costs);
+        %SHORTEST_PATHS_COMPUTED Called after computing the shortest paths in G (or a
+        %   transformed version of G) from v_source to all other vertices. paths
+        %   is a cell array of shortest paths from v_source to all other
+        %   vertices, costs a vector of path costs.
         
         [ graph , v_offset ] = concomitant_vertices_added(obj, subject, graph, v_offset);
         %CONCOMITANT_VERTICES_ADDED Called after the reversed graph was

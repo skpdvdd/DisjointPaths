@@ -23,17 +23,6 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                 obj.first_shortest_path_fun = fcnchk(varargin{1});
             end
         end
-        
-        function set_visitor(obj, visitor)
-        %SET_VISITOR Sets the visitor object.
-        %   set_visitor(visitor) sets visitor as the new visitor of this object.
-        %   visitor must be of type vertex_disjoint_visitor or empty, if you want
-        %   to clear the visitor.
-            
-            assert(isempty(visitor) || isa(visitor, 'vertex_disjoint_visitor'), 'visitor must be of type vertex_disjoint_visitor.');
-            
-            obj.visitor = visitor;
-        end
     end
     
     methods (Static = true, Access = protected)
@@ -76,6 +65,8 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                 
                 for j = 1:num_arcs
                     concomitant_vertex = [arcs(j,2) + v_max , arcs(j,1) , -full(original_graph(arcs(j,1),arcs(j,2)))];
+%                     fprintf('new concomit vertex %s\n', mat2str(concomitant_vertex));
+                    
                     concomitant_vertices = vertcat(concomitant_vertices, concomitant_vertex);
                 end
             end
@@ -143,7 +134,14 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     fun = obj.first_shortest_path_fun;
                 end
 
-                [ path, costs ] = fun(obj.G, obj.v_source, obj.v_sink);
+                [ p, c ] = fun(obj.G, obj.v_source);
+                
+                if ~isempty(obj.visitor)
+                    [ p, c ] = obj.visitor.shortest_paths_computed(obj, p, c);
+                end
+                
+                path = p{obj.v_sink};
+                costs = c(obj.v_sink);
                 
                 if isempty(path)
                     obj.on_path_not_found();
@@ -186,12 +184,19 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                 % find the shortest path in the transformed graph and find all
                 % vertices common to the found path and the shortest paths
                 
-                [ path, cost ] = obj.shortest_path_fun(R, obj.v_source, obj.v_sink);
+                [ p, c ] = obj.shortest_path_fun(R, obj.v_source);
+                
+                if ~isempty(obj.visitor)
+                    [ p, c ] = obj.visitor.shortest_paths_computed(obj, p, c);
+                end
+                
+                path = p{obj.v_sink};
+                cost = c(obj.v_sink);
                 
                 if isempty(path)
                     obj.on_path_not_found();
                     paths = [];
-                    costs = Inf;
+                    costs = [];
                     return
                 end
                 

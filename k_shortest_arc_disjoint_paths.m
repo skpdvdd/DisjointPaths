@@ -23,17 +23,6 @@ classdef k_shortest_arc_disjoint_paths < k_shortest_paths
                 obj.first_shortest_path_fun = fcnchk(varargin{1});
             end
         end
-        
-        function set_visitor(obj, visitor)
-        %SET_VISITOR Sets the visitor object.
-        %   set_visitor(visitor) sets visitor as the new visitor of this object.
-        %   visitor must be of type arc_disjoint_visitor or empty, if you want
-        %   to clear the visitor.
-            
-            assert(isempty(visitor) || isa(visitor, 'arc_disjoint_visitor'), 'visitor must be of type arc_disjoint_visitor.');
-            
-            obj.visitor = visitor;
-        end
     end
     
     methods (Access = protected)
@@ -52,7 +41,14 @@ classdef k_shortest_arc_disjoint_paths < k_shortest_paths
                     fun = obj.first_shortest_path_fun;
                 end
 
-                [ path, costs ] = fun(obj.G, obj.v_source, obj.v_sink);
+                [ p, c ] = fun(obj.G, obj.v_source);
+                
+                if ~isempty(obj.visitor)
+                    [ p, c ] = obj.visitor.shortest_paths_computed(obj, p, c);
+                end
+                
+                path = p{obj.v_sink};
+                costs = c(obj.v_sink);
                 
                 if isempty(path)
                     obj.on_path_not_found();
@@ -77,7 +73,14 @@ classdef k_shortest_arc_disjoint_paths < k_shortest_paths
                     R = obj.visitor.graph_reversed(obj, R);
                 end
                 
-                [ path, cost ] = obj.shortest_path_fun(R, obj.v_source, obj.v_sink);
+                [ p, c ] = obj.shortest_path_fun(R, obj.v_source);
+                
+                if ~isempty(obj.visitor)
+                    [ p, c ] = obj.visitor.shortest_paths_computed(obj, p, c);
+                end
+                
+                path = p{obj.v_sink};
+                cost = c(obj.v_sink);
                 
                 if isempty(path)
                     obj.on_path_not_found();

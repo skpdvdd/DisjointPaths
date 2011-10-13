@@ -10,7 +10,7 @@ classdef k_shortest_paths < handle
         
         %V_SINK The sink vertex
         v_sink;
-        
+                
         %LAST_PATHS A cell array containing all shortest paths found so far
         last_paths;
         
@@ -22,20 +22,31 @@ classdef k_shortest_paths < handle
         
         %FIRST_SHORTEST_PATH_FUN The function to use for finding the first shortest path
         first_shortest_path_fun;
-        
-        %VISITOR The visitor object, if any
-        visitor;
     end
     
-    properties (GetAccess = public, SetAccess = private)
+    properties (GetAccess = public, SetAccess = private)        
         %ITERATION The last iteration
         iteration = 0;
         
         %PATH_NOT_FOUND True if no path was found in the last iteration
         path_not_found = false;
+        
+        %VISITOR The visitor object, if any
+        visitor;
     end
     
-    methods        
+    methods 
+        function set_visitor(obj, visitor)
+        %SET_VISITOR Sets the visitor object.
+        %   set_visitor(visitor) sets visitor as the new visitor of this object.
+        %   visitor must be of type k_shortest_paths_visitor or empty, if you want
+        %   to clear the visitor.
+            
+            assert(isempty(visitor) || isa(visitor, 'k_shortest_paths_visitor'), 'visitor must be of type k_shortest_paths_visitor.');
+            
+            obj.visitor = visitor;
+        end
+        
         function [ paths, costs ] = find(obj, k)
         %FIND Finds shortest paths in the graph.
         %   [paths, costs] = obj.find(k) finds the k shortest paths in the
@@ -52,14 +63,6 @@ classdef k_shortest_paths < handle
             if nargin >= 2
                 for i = 1:k
                     [ paths, costs ] = obj.find();
-                    
-                    if isempty(paths)
-                        % return the shortest paths found so far and abort
-                        
-                        paths = obj.last_paths;
-                        costs = obj.last_costs;
-                        break
-                    end
                 end
             else
                 [ paths, costs ] = obj.next_iteration();

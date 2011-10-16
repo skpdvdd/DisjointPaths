@@ -69,7 +69,7 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     weight = k_shortest_paths.arc_weight(original_graph, [from to]);
                     
                     concomitant_vertex = [to + v_max , from , -weight];
-                    fprintf('new concomit vertex %s\n', mat2str(concomitant_vertex));
+%                     fprintf('new concomit vertex %s\n', mat2str(concomitant_vertex));
                     
                     concomitant_vertices = vertcat(concomitant_vertices, concomitant_vertex);
                 end

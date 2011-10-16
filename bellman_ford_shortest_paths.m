@@ -1,10 +1,17 @@
 function [ paths, costs ] = bellman_ford_shortest_paths( G, v_source )
 %BELLMAN_FORD_SHORTEST_PATHS Finds the shortest paths from v_source in a graph.
 %   [paths, costs] = bellman_ford_shortest_paths( G, v_source ) finds the
-%   shortest path from v_source to all other vertices in a graph G (must be a n*n
-%   sparse matrix) and returns the paths and costs. paths{i} contains the shortest
-%   path from v_source to vertex i. costs contains the path costs (Inf for
-%   unreachable vertices).
+%   shortest path from v_source to all other vertices in a graph G (must be a n*3
+%   matrix [from to weight ; ...] with positive weights) and returns the paths
+%   and costs. paths{i} contains the shortest path from v_source to vertex i.
+%   costs contains the path costs (Inf for unreachable vertices).
 
-    [ costs, paths, ~ ] = graphshortestpath(G, v_source, 'Method', 'Bellman-Ford');
+    G = sortrows(G, [2 1]);
+    v = G(:,3);
+    G(:,3) = 1;
+    v_max = max([G(:,1) ; G(:,2)]);
+    
+    G = sparse(G(:,1), G(:,2), G(:,3), v_max, v_max);
+
+    [ costs, paths, ~ ] = graphshortestpath(G, v_source, 'Method', 'Bellman-Ford', 'Weights', v);
 end

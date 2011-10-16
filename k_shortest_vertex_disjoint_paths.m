@@ -5,8 +5,8 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
         function obj = k_shortest_vertex_disjoint_paths(G, v_source, v_sink, shortest_path_fun, varargin)
         %K_SHORTEST_VERTEX_DISJOINT_PATHS Creates a new object of this class.
         %   k_shortest_vertex_disjoint_paths(G, v_source, v_sink, shortest_path_fun, first_shortest_path_fun)
-        %   creates a new object for finding vertex disjoint shortest paths in G (a sparse
-        %   matrix) from v_source to v_sink. shortest_path_fun is a handle to
+        %   creates a new object for finding vertex disjoint shortest paths in G (a n*3
+        %   matrix [from to weight ; ...]) from v_source to v_sink. shortest_path_fun is a handle to
         %   the function to use for computing shortest paths.
         %   first_shortest_path_fun (optional) is a handle to the function to
         %   use when computing the first shortest path.
@@ -64,8 +64,12 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                 num_arcs = size(arcs, 1);
                 
                 for j = 1:num_arcs
-                    concomitant_vertex = [arcs(j,2) + v_max , arcs(j,1) , -full(original_graph(arcs(j,1),arcs(j,2)))];
-%                     fprintf('new concomit vertex %s\n', mat2str(concomitant_vertex));
+                    from = arcs(j,1);
+                    to = arcs(j,2);
+                    weight = k_shortest_paths.arc_weight(original_graph, [from to]);
+                    
+                    concomitant_vertex = [to + v_max , from , -weight];
+                    fprintf('new concomit vertex %s\n', mat2str(concomitant_vertex));
                     
                     concomitant_vertices = vertcat(concomitant_vertices, concomitant_vertex);
                 end
@@ -79,10 +83,8 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
             % find all arcs in the original graph that are not part of any
             % shortest path. check these arcs for arcs to vertices b that are
             % part of the shortest paths and redirect to b'.
-            
-            [r , c , ~ ] = find(original_graph);
-            
-            original_graph_arcs = [r c];
+                        
+            original_graph_arcs = original_graph(:,1:2);
             original_graph_arcs_no_path = setdiff(original_graph_arcs, path_arcs, 'rows');
             
             % using a lookup table for fast check if b is in any a->b arc of any
@@ -127,6 +129,12 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
         %   describes a shortest path [v1 v2 ... vn]. costs is a vector of size
         %   i+1 holding the cost for every path.
             
+            G = obj.G;
+        
+            if ~isempty(obj.visitor)
+                G = obj.visitor.begin(obj, G);
+            end
+        
             if obj.iteration == 0
                 fun = obj.shortest_path_fun;
 
@@ -134,7 +142,7 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     fun = obj.first_shortest_path_fun;
                 end
 
-                [ p, c ] = fun(obj.G, obj.v_source);
+                [ p, c ] = fun(G, obj.v_source);
                 
                 if ~isempty(obj.visitor)
                     [ p, c ] = obj.visitor.shortest_paths_computed(obj, p, c);
@@ -162,24 +170,19 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                 
                 % reverse all arcs that are in any shortest path to obtain R
                         
-                R = k_shortest_paths.reverse_arcs(obj.G, obj.last_paths); 
+                R = k_shortest_paths.reverse_arcs(G, obj.last_paths); 
                 
                 if ~isempty(obj.visitor)
                     R = obj.visitor.graph_reversed(obj, R);
                 end
                 
-                [ r, c, v ] = find(R);
-
                 % add concomitant vertices and redirect arcs
                 
-                [ result, v_offset ] = k_shortest_vertex_disjoint_paths.add_concomitant_vertices([r c v], obj.last_paths, obj.G);
+                [ R, v_offset ] = k_shortest_vertex_disjoint_paths.add_concomitant_vertices(R, obj.last_paths, G);
                 
                 if ~isempty(obj.visitor)
-                    [ result , v_offset ] = obj.visitor.concomitant_vertices_added(obj, result, v_offset);
+                    [ R , v_offset ] = obj.visitor.concomitant_vertices_added(obj, R, v_offset);
                 end
-                
-                result_v_max = max(max(result(:,1:2)));
-                R = sparse(result(:,1), result(:,2), result(:,3), result_v_max, result_v_max);
                 
                 % find the shortest path in the transformed graph and find all
                 % vertices common to the found path and the shortest paths
@@ -217,6 +220,8 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     
                     return
                 end
+                
+                %----
 
                 % otherwise combine all vertices v in path with their corresponding
                 % concomitant vertices v' ... that is change v' to v. the relation
@@ -231,7 +236,7 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     from = arcs_combined(i,1);
                     to = arcs_combined(i,2);
                     
-                    arcs_combined(i,3) = R(from,to);
+                    arcs_combined(i,3) = k_shortest_paths.arc_weight(R, [from to]);
                     
                     if from > v_offset, arcs_combined(i,1) = from - v_offset; end
                     if to > v_offset, arcs_combined(i,2) = to - v_offset; end
@@ -239,7 +244,7 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                                     
                 % generate the combined graph
                 
-                shortest_path_arcs = k_shortest_paths.paths_to_graph(obj.G, obj.last_paths);
+                shortest_path_arcs = k_shortest_paths.paths_to_graph(G, obj.last_paths);
                 
                 combined_graph = k_shortest_paths.generate_combined_graph(shortest_path_arcs, arcs_combined);
                 

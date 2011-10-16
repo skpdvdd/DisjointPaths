@@ -66,6 +66,11 @@ classdef k_shortest_paths < handle
                 end
             else
                 [ paths, costs ] = obj.next_iteration();
+                
+                if ~isempty(obj.visitor)
+                    [ paths, costs ] = obj.visitor.paths_computed(obj, paths, costs);
+                end
+                
                 obj.iteration = obj.iteration + 1;
             end
         end
@@ -88,7 +93,7 @@ classdef k_shortest_paths < handle
             
             if isempty(parser)
                 parser = inputParser();
-                parser.addRequired('G', @issparse);
+                parser.addRequired('G', @(x) ~isempty(x) && size(x,2) == 3);
                 parser.addRequired('v_source', @isscalar);
                 parser.addRequired('v_sink', @isscalar);
                 parser.addRequired('shortest_path_fun', @(x) isa(x, 'function_handle'));
@@ -135,10 +140,11 @@ classdef k_shortest_paths < handle
         %PATHS_TO_GRAPH Creates a graph from a number of paths.
         %   graph = paths_to_graph(G, paths) creates a graph graph which is a
         %   n*3 matrix of vertices and their weights from a number of paths in
-        %   G, whichs is a sparse matrix. paths is a vector describing a path or
+        %   G, which is also a n*3 matrix. paths is a vector describing a path or
         %   a cell array of paths.
             
             arc_idx = 1;
+            G_arcs = [G(:,1) G(:,2)];
             
             if iscell(paths)
                 num_arcs = sum(cellfun(@(x) numel(x) - 1, paths));
@@ -152,7 +158,12 @@ classdef k_shortest_paths < handle
 
             function path_to_arcs(path)
                 for i = 1:numel(path) - 1
-                    graph(arc_idx,:) = [path(i) path(i + 1) G(path(i), path(i + 1))];
+                    from = path(i);
+                    to = path(i + 1);
+                    
+                    [ ~, idx ] = ismember([from to], G_arcs, 'rows');
+                    
+                    graph(arc_idx,:) = [from to G(idx,3)];
                     arc_idx = arc_idx + 1;
                 end
             end
@@ -210,11 +221,12 @@ classdef k_shortest_paths < handle
             % all shortest paths are arc disjoint.
             
             for i = 1:num_source_arcs
-                % regenerating G because sparse manipulation is slow
-                G = sparse(graph(:,1), graph(:,2), graph(:,3), v_max, v_max);
+                [ p, c ] = dag_shortest_paths(graph, v_source);
                 
-                [ cost, path , ~ ] = graphshortestpath(G, v_source, v_sink, 'Method', 'Acyclic');
-                
+                path = p{v_sink};
+                cost = c(v_sink);
+
+
                 if isempty(path)
                     error('v_sink unreachable from v_source, invalid graph.');
                 end
@@ -225,7 +237,7 @@ classdef k_shortest_paths < handle
                 arcs = k_shortest_paths.path_to_arcs(path);
                 [ ~ , arcs_idx ] = ismember(arcs, graph(:,1:2), 'rows');
                 
-                graph(arcs_idx, 3) = 0;
+                graph(arcs_idx, :) = [];
             end
         end
         
@@ -235,23 +247,36 @@ classdef k_shortest_paths < handle
         %   all arcs that are part of any path in paths. paths is either a
         %   vector [v1 v2 ... vn] describing one path in G or a cell array of
         %   paths. All arcs are assumed to be unique among all paths. G is a
-        %   graph, represented by a sparse matrix. R is the modified graph.
+        %   n*3 matrix. R is the modified graph, also n*3.
+            
+            G_arcs = [G(:,1) G(:,2)];
             
             R = G;
+            R_remove = [];
+            R_add = [];
             
             if iscell(paths)
                 cellfun(@reverse_arcs, paths);
             else
                 reverse_arcs(paths);
             end
-                        
+            
+            R_add = unique(R_add, 'rows');
+            
+            R = setdiff(R, R_remove, 'rows');
+            R = vertcat(R, R_add);
+       
             function reverse_arcs(path)
                 for v = 1:numel(path) - 1
                     from = path(v);
                     to = path(v + 1);
                     
-                    R(to,from) = -G(from,to);
-                    R(from,to) = 0;
+                    [ ~, idx ] = ismember([from to], G_arcs, 'rows');
+                    
+                    weight = G(idx,3);
+                    
+                    R_remove = vertcat(R_remove, [from to weight]);
+                    R_add = vertcat(R_add, [to from -weight]);
                 end  
             end
         end
@@ -263,6 +288,20 @@ classdef k_shortest_paths < handle
             
             for i = 1:numel(path) - 1
                 arcs(i,:) = [path(i) path(i + 1)];
+            end
+        end
+        
+        function weight = arc_weight(G, arc)
+        %ARC_WEIGHT Returns the weight of arc [a b] in G, where G is a n*3 
+        %   matrix [from to weight ; ...].
+            
+            weight = inf;
+            
+            G_arcs = [G(:,1) G(:,2)];
+            [ ~, idx ] = ismember([arc(1) arc(2)], G_arcs, 'rows');
+            
+            if idx > 0
+                weight = G(idx,3);
             end
         end
     end

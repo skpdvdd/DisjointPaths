@@ -5,6 +5,11 @@ function visualize_shortest_paths(G, paths)
 %   be a cell array with k elements, with each one being a vector describing
 %   a path in the form [v1 v2 ... vn].
 
+    v_max = max([G(:,1) ; G(:,2)]);
+    v_0 = find(G(:,3) == 0);
+    G(G(:,3)==0,3) = -Inf;
+    G = sparse(G(:,1), G(:,2), G(:,3), v_max, v_max);
+
     h = view(biograph(G, [], 'ShowWeights', 'on'));
     
     hue = 0;

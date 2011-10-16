@@ -9,9 +9,9 @@ close(child_handles(k));
 
 % -----------------------------
 
-G = [1 2 0.001
-     1 3 0.001
-     1 4 0.001
+G = [1 2 0
+     1 3 0
+     1 4 0
      2 5 -2.8
      2 6 -2.8
      3 5 2.5
@@ -30,10 +30,7 @@ G = [1 2 0.001
      9 11 -2.85
      10 11 2.2];
      
-G = sparse(G(:,1), G(:,2), G(:,3), 11, 11);
-
 % kp = k_shortest_arc_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths);
-
 kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths, @dag_shortest_paths);
  
 % -------------------------------
@@ -46,8 +43,7 @@ kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths, @d
 %      2 5 4
 %      5 6 4];
 %  
-% G = sparse(G(:,1), G(:,2), G(:,3), 6, 6);
-% 
+
 % kp = k_shortest_arc_disjoint_paths(G, 1, 6, @bellman_ford_shortest_paths);
 % kp = k_shortest_vertex_disjoint_paths(G, 1, 6, @bellman_ford_shortest_paths);
 
@@ -63,11 +59,8 @@ kp = k_shortest_vertex_disjoint_paths(G, 1, 11, @bellman_ford_shortest_paths, @d
 %      4 6 3
 %      2 5 4
 %      5 7 3];
-%  
-% G = sparse(G(:,1), G(:,2), G(:,3), 7, 7);
-% 
+ 
 % kp = k_shortest_arc_disjoint_paths(G, 1, 7, @bellman_ford_shortest_paths);
-% kp.set_visitor(arc_disjoint_visitor_example());
 % kp = k_shortest_vertex_disjoint_paths(G, 1, 7, @bellman_ford_shortest_paths);
 
 % --------------------------------

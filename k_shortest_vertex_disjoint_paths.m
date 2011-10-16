@@ -203,7 +203,7 @@ classdef k_shortest_vertex_disjoint_paths < k_shortest_paths
                     return
                 end
                 
-                paths_vertices = obj.last_paths{:};
+                paths_vertices = horzcat(obj.last_paths{:});
                 paths_vertices = unique(paths_vertices);
                 
                 common_vertices = intersect(path, paths_vertices);

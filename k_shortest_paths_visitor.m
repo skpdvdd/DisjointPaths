@@ -5,13 +5,13 @@ classdef k_shortest_paths_visitor < handle
     methods
         function G = begin(obj, subject, G)
         %BEGIN Called when computation of the shortest paths begins.
-        %   G is the graph to operate on. Must be a square sparese matrix.
+        %   G is the graph to operate on. Must is a n*3 matrix [from to weight ; ...].
             
         end
         
         function R = graph_reversed(obj, subject, R)
         %GRAPH_REVERSED Called after the graph was reversed.
-        %   R is the resulting graph, a sparse matrix.
+        %   R is the resulting graph, a n*3 matrix [from to weight ; ...].
             
         end
         
